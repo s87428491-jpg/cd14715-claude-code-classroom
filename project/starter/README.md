@@ -122,6 +122,9 @@ LOG_LEVEL=info
 # Your Anthropic API key
 ANTHROPIC_API_KEY=sk-ant-your-key-here
 
+# Only set this when your provider supplies a custom API endpoint
+# ANTHROPIC_BASE_URL=https://your-provider.example
+
 # Model Configuration (REQUIRED)
 ANTHROPIC_MODEL=claude-sonnet-4-5-20250929
 
@@ -134,6 +137,7 @@ PROJECT_ROOT=/absolute/path/to/project/starter
 # Logging level (optional)
 LOG_LEVEL=info
 ```
+The `.env` file is ignored by Git. Keep credentials there or in the workspace environment; never commit them or paste them into source files.
 
 ### Running
 

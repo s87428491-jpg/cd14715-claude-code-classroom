@@ -1,53 +1,36 @@
-import { describe, it } from 'vitest';
-
-
-/**
- * Tests for CodeReviewOrchestrator
- *
- * TODO: Implement these tests
- *
- * Tips:
- * - Use vitest mocking for MCP servers
- * - Mock rate limiter to avoid delays
- * - Test both success and failure paths
- */
+import { describe, expect, it } from 'vitest';
+import { codeQualityAnalyzer, refactoringSuggester, testCoverageAnalyzer } from '../src/agents/index.js';
+import { CodeReviewOrchestrator } from '../src/orchestrator.js';
+import { ErrorCodes, ReviewError } from '../src/utils/error-handler.js';
 
 describe('CodeReviewOrchestrator', () => {
-  describe('Configuration', () => {
-    it('should initialize with default options', () => {
-    });
-
-    it('should accept custom rate limit configuration', () => {
-      // TODO: Create orchestrator with custom rate limits
-      // TODO: Verify custom limits are applied
-    });
+  it('initializes with defaults and accepts custom rate limits', () => {
+    expect(new CodeReviewOrchestrator()).toBeInstanceOf(CodeReviewOrchestrator);
+    expect(new CodeReviewOrchestrator({
+      model: 'test-model',
+      rateLimits: { maxRequestsPerMinute: 4, maxTokensPerMinute: 2000, maxConcurrent: 2 }
+    })).toBeInstanceOf(CodeReviewOrchestrator);
   });
 
-  describe('reviewPullRequest', () => {
-    it('should fetch PR files from GitHub MCP', async () => {
-     
-    });
-
-    it('should spawn all 3 subagents in parallel', async () => {
-  
-    });
-
-    it('should aggregate results into ReviewReport', async () => {
-  
-    });
-
-    it('should validate output with Zod schema', async () => {
-    });
-
- 
+  it('rejects reviews without a configured model or valid PR identity', async () => {
+    await expect(new CodeReviewOrchestrator().reviewPullRequest('octocat', 'Hello-World', 1))
+      .rejects.toMatchObject({ code: ErrorCodes.INVALID_CONFIG });
+    await expect(new CodeReviewOrchestrator({ model: 'test-model' }).reviewPullRequest('', 'Hello-World', 1))
+      .rejects.toBeInstanceOf(ReviewError);
+    await expect(new CodeReviewOrchestrator({ model: 'test-model' }).reviewPullRequest('octocat', 'Hello-World', 0))
+      .rejects.toMatchObject({ code: ErrorCodes.INVALID_CONFIG });
   });
 
+  it('registers specialized agents with inherited models and skill access', () => {
+    for (const agent of [codeQualityAnalyzer, testCoverageAnalyzer, refactoringSuggester]) {
+      expect(agent.model).toBe('inherit');
+      expect(agent.tools).toContain('Skill');
+      expect(agent.description.length).toBeGreaterThan(20);
+    }
+  });
 
-  describe('Integration', () => {
-    // These tests require actual API keys and should be skipped in CI
-    it.skip('should review a real small PR', async () => {
-      // TODO: Test with a real public PR
-      // NOTE: Only run manually with valid API keys
-    });
+  it.skip('reviews a real pull request when valid API credentials are configured', async () => {
+    const report = await new CodeReviewOrchestrator().reviewPullRequest('octocat', 'Hello-World', 1);
+    expect(report.pullRequest).toEqual({ owner: 'octocat', repo: 'Hello-World', number: 1 });
   });
 });

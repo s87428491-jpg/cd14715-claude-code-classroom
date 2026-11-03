@@ -67,16 +67,28 @@ export async function withRetry<T>(
   maxRetries: number = 3,
   delayMs: number = 1000
 ): Promise<T> {
-  // TODO: Implement retry logic with exponential backoff
-  // Hints:
-  // - Use a for loop from 1 to maxRetries
-  // - Use try/catch to catch errors
-  // - Calculate backoff: delayMs * Math.pow(2, attempt - 1)
-  // - Add jitter: Math.random() * 100
-  // - Use setTimeout wrapped in Promise for delay
-  // - Throw ReviewError with ErrorCodes.RETRY_EXHAUSTED if all retries fail
+  if (!Number.isInteger(maxRetries) || maxRetries < 0 || delayMs < 0) {
+    throw new ReviewError('Retry configuration is invalid', ErrorCodes.INVALID_CONFIG);
+  }
 
-  throw new Error('Not implemented');
+  let lastError: unknown;
+  for (let attempt = 0; attempt <= maxRetries; attempt += 1) {
+    try {
+      return await fn();
+    } catch (error) {
+      lastError = error;
+      if (attempt === maxRetries) break;
+
+      const backoffMs = delayMs * Math.pow(2, attempt) + Math.random() * 100;
+      await new Promise<void>(resolve => setTimeout(resolve, backoffMs));
+    }
+  }
+
+  throw new ReviewError(
+    `Operation failed after ${maxRetries + 1} attempts: ${formatError(lastError)}`,
+    ErrorCodes.RETRY_EXHAUSTED,
+    { attempts: maxRetries + 1, cause: formatError(lastError) }
+  );
 }
 
 /**
@@ -96,14 +108,25 @@ export async function withTimeout<T>(
   timeoutMs: number,
   errorMessage: string = 'Operation timed out'
 ): Promise<T> {
-  // TODO: Implement timeout wrapper using Promise.race
-  // Hints:
-  // - Use Promise.race to race fn() against a timeout promise
-  // - The timeout promise should reject after timeoutMs milliseconds
-  // - Throw ReviewError with ErrorCodes.AGENT_TIMEOUT on timeout
-  // - Include timeoutMs in metadata
+  if (!Number.isFinite(timeoutMs) || timeoutMs < 0) {
+    throw new ReviewError('Timeout must be a non-negative number', ErrorCodes.INVALID_CONFIG);
+  }
 
-  throw new Error('Not implemented');
+  let timeout: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      fn(),
+      new Promise<never>((_, reject) => {
+        timeout = setTimeout(() => reject(new ReviewError(
+          errorMessage,
+          ErrorCodes.AGENT_TIMEOUT,
+          { timeoutMs }
+        )), timeoutMs);
+      })
+    ]);
+  } finally {
+    if (timeout) clearTimeout(timeout);
+  }
 }
 
 /**

@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Code Review Report</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: system-ui, sans-serif;
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 24px;
+      background: #f3f5f4;
+      color: #212529;
+    }
+    h1 { color: #2c3e50; border-bottom: 3px solid #3498db; padding-bottom: 12px; }
+    .summary {
+      background: white;
+      padding: 24px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      margin: 24px 0;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 16px;
+    }
+    .metric { text-align: center; }
+    .metric-value { font-size: 2em; font-weight: bold; color: #3498db; }
+    .metric-label { color: #6c757d; font-size: 0.9em; }
+    ul { list-style: none; padding: 0; }
+    li { padding: 12px; margin: 8px 0; border-radius: 4px; background: white; }
+    .rec-critical { border-left: 4px solid #e74c3c; }
+    .rec-high { border-left: 4px solid #f39c12; }
+    .rec-medium { border-left: 4px solid #3498db; }
+    .rec-low { border-left: 4px solid #27ae60; }
+    .priority { font-weight: bold; margin-right: 8px; }
+    .file-review { background: white; border: 1px solid #dce3df; padding: 20px; margin: 20px 0; border-radius: 6px; }
+    .file-review h2 { overflow-wrap: anywhere; }
+    .file-review li { border: 1px solid #e6ebe8; }
+    pre { overflow-x: auto; padding: 12px; background: #f3f5f4; }
+    .rec-critical .priority { color: #e74c3c; }
+    .rec-high .priority { color: #f39c12; }
+    .rec-medium .priority { color: #3498db; }
+    .rec-low .priority { color: #27ae60; }
+    footer { text-align: center; color: #6c757d; margin-top: 32px; font-size: 0.9em; }
+  </style>
+</head>
+<body>
+  <h1>Code Review Report: udacity/cd14715-simple-todo-app#1</h1>
+
+  <div class="summary">
+    <div class="metric">
+      <div class="metric-value">72</div>
+      <div class="metric-label">Overall Score</div>
+    </div>
+    <div class="metric">
+      <div class="metric-value">1</div>
+      <div class="metric-label">Files Reviewed</div>
+    </div>
+    <div class="metric">
+      <div class="metric-value">0</div>
+      <div class="metric-label">Critical Issues</div>
+    </div>
+    <div class="metric">
+      <div class="metric-value">4</div>
+      <div class="metric-label">Tests Needed</div>
+    </div>
+    <div class="metric">
+      <div class="metric-value">7</div>
+      <div class="metric-label">Refactorings</div>
+    </div>
+  </div>
+
+  <h2>🎯 Top Recommendations</h2>
+  <ul>
+      <li class="rec-critical">
+        <span class="priority">[CRITICAL]</span>
+        <strong>Testing</strong>: Implement comprehensive test suite for security-critical functions. The file has 0% test coverage with critical security functions (email validation, XSS sanitization) completely untested. Create tests/fixtures/clean-code.test.ts covering all 12 identified test scenarios, prioritizing email validation edge cases, XSS sanitization verification, and end-to-end user creation flows.
+        <br><small>Files: fixtures/clean-code.ts</small>
+      </li>
+
+      <li class="rec-high">
+        <span class="priority">[HIGH]</span>
+        <strong>Security</strong>: Fix incomplete XSS protection in sanitizeInput() function. Current implementation is missing ampersand encoding and other special characters that can be XSS vectors. Use an established library like DOMPurify or he.js, or at minimum add comprehensive character encoding including ampersand (&amp;), backtick (`), and ensure proper ordering of replacements.
+        <br><small>Files: fixtures/clean-code.ts</small>
+      </li>
+
+      <li class="rec-high">
+        <span class="priority">[HIGH]</span>
+        <strong>Security</strong>: Improve email validation regex to prevent invalid emails. The current regex /^[^\s@]+@[^\s@]+\.[^\s@]+$/ is too permissive and accepts malformed addresses. Consider adopting Zod&#39;s email validation (z.string().email()) which aligns with project conventions and provides more robust validation.
+        <br><small>Files: fixtures/clean-code.ts</small>
+      </li>
+
+      <li class="rec-high">
+        <span class="priority">[HIGH]</span>
+        <strong>Modernization</strong>: Replace Math.random() ID generation with crypto.randomUUID() for cryptographic security. Current implementation could produce collisions in high-volume scenarios and is not cryptographically secure. Use Node.js&#39;s crypto.randomUUID() for RFC 4122 compliant UUIDs with near-zero collision probability.
+        <br><small>Files: fixtures/clean-code.ts</small>
+      </li>
+
+      <li class="rec-medium">
+        <span class="priority">[MEDIUM]</span>
+        <strong>Code Quality</strong>: Adopt Zod schema validation throughout the file to match project conventions. Replace imperative validation logic with declarative Zod schemas for both CreateUserInput and email validation. This provides better type safety, automatic transformations, and aligns with patterns used in the project&#39;s agent files.
+        <br><small>Files: fixtures/clean-code.ts</small>
+      </li>
+    </ul>
+
+  <h2>File Reviews</h2>
+  <section class="file-review"><h2>fixtures/clean-code.ts</h2>
+        <p>Quality score: 72/100 · Estimated coverage: 0%</p>
+        <h3>Code quality (8)</h3><ul>
+        <li><strong>Line 25 · medium · security</strong>
+          <p>Email validation regex is too permissive and allows invalid email addresses like &#39;a@b.c&#39; or addresses with consecutive dots</p><p><strong>Suggestion:</strong> Use a more robust email validation pattern or a library like validator.js. Consider: /^[a-zA-Z0-9.!#$%&amp;&#39;*+\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/</p></li>
+
+        <li><strong>Line 34 · medium · security</strong>
+          <p>HTML entity encoding is incomplete and doesn&#39;t prevent all XSS vectors. Missing encoding for ampersand (&amp;), backtick (`), and other special characters</p><p><strong>Suggestion:</strong> Use a established library like DOMPurify or he.js for comprehensive HTML sanitization, or at minimum add .replace(/&amp;/g, &#39;&amp;amp;&#39;) as the first replacement and handle additional characters</p></li>
+
+        <li><strong>Line 55 · low · bug-risk</strong>
+          <p>Email is not sanitized before storing, only lowercased. Malicious input in email could still contain HTML entities or special characters</p><p><strong>Suggestion:</strong> Apply sanitizeInput() to the email field as well: email: sanitizeInput(input.email.toLowerCase())</p></li>
+
+        <li><strong>Line 74 · low · security</strong>
+          <p>ID generation uses Math.random() which is not cryptographically secure and could produce collisions in high-volume scenarios</p><p><strong>Suggestion:</strong> Use crypto.randomUUID() for guaranteed uniqueness and cryptographic security: import { randomUUID } from &#39;crypto&#39;; return randomUUID();</p></li>
+
+        <li><strong>Line 59 · info · bug-risk</strong>
+          <p>generateId() and saveUser() are called but not defined in scope at this point. In TypeScript, function declarations are hoisted but this could cause confusion</p><p><strong>Suggestion:</strong> Consider moving generateId() and saveUser() definitions before createUser(), or document the intentional reliance on hoisting</p></li>
+
+        <li><strong>Line 66 · info · maintainability</strong>
+          <p>saveUser() function has no error handling. Database operations can fail and should be handled appropriately</p><p><strong>Suggestion:</strong> Add try-catch block in createUser() around saveUser() call, or document expected error propagation behavior</p></li>
+
+        <li><strong>Line 83 · info · best-practice</strong>
+          <p>Parameterized query parameters use positional placeholders ($1, $2, etc.) which are PostgreSQL-specific. This reduces portability</p><p><strong>Suggestion:</strong> Document the database dependency (PostgreSQL) in comments, or use a database abstraction layer that handles different placeholder formats</p></li>
+
+        <li><strong>Line 46 · low · maintainability</strong>
+          <p>Empty string check doesn&#39;t account for whitespace-only input. &#39;   &#39; would pass validation</p><p><strong>Suggestion:</strong> Use .trim() before validation: if (!input.email?.trim() || !input.name?.trim())</p></li>
+      </ul>
+        <h3>Test gaps (12)</h3><ul>
+        <li><strong>isValidEmail (lines 25-27) · critical priority</strong>
+          <p>Email validation is a security-critical function that determines whether user input is accepted. Incorrect validation could allow invalid emails into the system or reject valid ones. This function has multiple edge cases around email format validation that must be verified.</p><p><strong>Suggested test:</strong> Test valid email formats (user@domain.com, user.name@domain.co.uk, user+tag@domain.com), invalid formats (missing @, missing domain, multiple @, spaces, special chars in wrong positions), and edge cases (empty string, very long emails, internationalized domains). Expected: returns true for valid RFC-compliant emails, false otherwise.</p></li>
+
+        <li><strong>sanitizeInput (lines 33-38) · critical priority</strong>
+          <p>Input sanitization is a critical security function preventing XSS attacks. Incomplete or incorrect sanitization could leave the application vulnerable to cross-site scripting. The function must handle all dangerous HTML/script characters correctly.</p><p><strong>Suggested test:</strong> Test HTML tag sanitization (&lt;script&gt;, &lt;img&gt;, &lt;a&gt;), quote escaping (single and double quotes), combined attack vectors (&lt;img src=x onerror=&#39;alert(1)&#39;&gt;), already-escaped input (prevent double-escaping), empty strings, and very long inputs. Expected: all dangerous characters are properly escaped to their HTML entity equivalents.</p></li>
+
+        <li><strong>createUser (lines 44-68) · critical priority</strong>
+          <p>createUser is the main business logic function that orchestrates validation, sanitization, and user creation. It has multiple error paths and validation branches that affect data integrity and security. Failures here could lead to invalid data in the database or security vulnerabilities.</p><p><strong>Suggested test:</strong> Test successful user creation with valid inputs, validation errors (missing email, missing name, invalid email format), sanitization of malicious name input, email normalization to lowercase, unique ID generation, and proper Date object creation. Expected: valid inputs create user with sanitized data and normalized email; invalid inputs throw descriptive errors.</p></li>
+
+        <li><strong>createUser - missing email/name validation (line 46) · high priority</strong>
+          <p>The null/empty check for required fields is the first line of defense against incomplete data. Each field must be tested independently to ensure both are properly validated.</p><p><strong>Suggested test:</strong> Test createUser with missing email (name provided), missing name (email provided), and both missing. Expected: throws &#39;Email and name are required&#39; error for each scenario.</p></li>
+
+        <li><strong>createUser - email validation branch (line 50) · high priority</strong>
+          <p>The email format validation branch determines whether user creation proceeds. Invalid email formats should be rejected before any database operations occur.</p><p><strong>Suggested test:</strong> Test createUser with various invalid email formats (no @, no domain, malformed). Expected: throws &#39;Invalid email format&#39; error and does not proceed to user creation.</p></li>
+
+        <li><strong>generateId (lines 73-75) · high priority</strong>
+          <p>ID generation must produce unique identifiers for each user. While collision is statistically unlikely, the function should be tested for format consistency and uniqueness properties. Poor ID generation could lead to data corruption or security issues.</p><p><strong>Suggested test:</strong> Test that generateId produces strings matching the expected format (user_&lt;timestamp&gt;_&lt;random&gt;), generates different IDs on consecutive calls, and produces IDs of reasonable length. Expected: IDs follow the pattern, are unique across multiple calls, and contain valid characters.</p></li>
+
+        <li><strong>saveUser (lines 80-87) · medium priority</strong>
+          <p>While saveUser currently uses a commented-out database call, the parameterized query structure should be verified for SQL injection prevention. The function should be tested to ensure the query and parameters are correctly formatted.</p><p><strong>Suggested test:</strong> Test that saveUser constructs the correct parameterized query with proper parameter ordering (id, email, name, createdAt) and does not concatenate user input into the query string. Mock the database call to verify parameters match user object properties. Expected: query uses $1-$4 placeholders and params array matches user properties in correct order.</p></li>
+
+        <li><strong>isValidEmail - edge cases · high priority</strong>
+          <p>Email validation regex can fail on legitimate edge cases that are technically valid per RFC specifications but may not match the simple regex pattern. Testing edge cases ensures the validation matches business requirements.</p><p><strong>Suggested test:</strong> Test edge cases: consecutive dots (user..name@domain.com), leading/trailing dots (.user@domain.com, user.@domain.com), plus addressing (user+tag@domain.com), subdomain emails (user@mail.domain.com), numbers in domains (user@123.com), hyphenated domains (user@my-domain.com). Expected: behavior should match business requirements for acceptable email formats.</p></li>
+
+        <li><strong>sanitizeInput - unicode and special characters · medium priority</strong>
+          <p>The sanitization function may not handle unicode characters, emoji, or non-Latin scripts correctly. These could bypass sanitization or be corrupted during processing.</p><p><strong>Suggested test:</strong> Test sanitizeInput with unicode characters (Japanese: こんにちは, Arabic: مرحبا, emoji: 👋), mixed content (Hello&lt;script&gt;alert(1)&lt;/script&gt;世界), and null bytes. Expected: unicode is preserved while HTML entities are escaped, no corruption of valid international characters.</p></li>
+
+        <li><strong>createUser - email case normalization · medium priority</strong>
+          <p>Email normalization to lowercase could cause issues with email providers that are case-sensitive (rare but possible) or with how the system handles duplicate detection.</p><p><strong>Suggested test:</strong> Test createUser with uppercase email (USER@DOMAIN.COM), mixed case (User@Domain.Com), and already lowercase. Expected: all emails are normalized to lowercase in the returned user object (user@domain.com).</p></li>
+
+        <li><strong>createUser - concurrent ID generation · low priority</strong>
+          <p>If multiple users are created simultaneously (e.g., high traffic), the timestamp-based ID generation could theoretically produce collisions. While Math.random() adds entropy, this should be verified.</p><p><strong>Suggested test:</strong> Test calling createUser multiple times in rapid succession (e.g., Promise.all with 100 concurrent calls) and verify all generated IDs are unique. Expected: no duplicate IDs even under concurrent creation.</p></li>
+
+        <li><strong>createUser - Date object creation timing · low priority</strong>
+          <p>The createdAt timestamp is generated during user object creation. There could be edge cases around timezone handling or Date serialization.</p><p><strong>Suggested test:</strong> Test that createdAt is a valid Date object, is close to current time (within reasonable delta like 1 second), and can be properly serialized for database storage. Expected: createdAt is a Date instance representing the creation time.</p></li>
+      </ul>
+        <h3>Refactoring (7)</h3><ul>
+        <li><strong>modernize · medium impact</strong>
+          <p>Replace basic regex email validation with modern Zod schema validation. The project already uses Zod extensively for validation, providing better type safety, composability, and more comprehensive validation.</p>
+          <pre><code>export function isValidEmail(email: string): boolean {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+}
+→
+import { z } from &#39;zod&#39;;
+
+const emailSchema = z.string().email();
+
+export function isValidEmail(email: string): boolean {
+  return emailSchema.safeParse(email).success;
+}</code></pre>
+          <p>Aligns with project&#39;s existing Zod validation patterns; more robust email validation using industry-standard library; better error messages available through Zod if needed; type-safe and composable with other validations</p></li>
+
+        <li><strong>modernize · high impact</strong>
+          <p>Replace imperative validation with Zod schema validation to match project conventions and provide better type safety. This consolidates all input validation into a single, declarative schema.</p>
+          <pre><code>export async function createUser(input: CreateUserInput): Promise&lt;User&gt; {
+  // Validate input
+  if (!input.email || !input.name) {
+    throw new Error(&#39;Email and name are required&#39;);
+  }
+
+  if (!isValidEmail(input.email)) {
+    throw new Error(&#39;Invalid email format&#39;);
+  }
+
+  // Sanitize input
+  const sanitizedName = sanitizeInput(input.name);
+
+  // Create user object
+  const user: User = {
+    id: generateId(),
+    email: input.email.toLowerCase(),
+    name: sanitizedName,
+    createdAt: new Date()
+  };
+
+  await saveUser(user);
+  return user;
+}
+→
+const CreateUserInputSchema = z.object({
+  email: z.string().email().transform(s =&gt; s.toLowerCase()),
+  name: z.string().min(1).transform(sanitizeInput)
+});
+
+export async function createUser(input: CreateUserInput): Promise&lt;User&gt; {
+  const validated = CreateUserInputSchema.parse(input);
+
+  const user: User = {
+    id: generateId(),
+    email: validated.email,
+    name: validated.name,
+    createdAt: new Date()
+  };
+
+  await saveUser(user);
+  return user;
+}</code></pre>
+          <p>Consolidates validation logic into declarative schema; transforms happen automatically during validation; better error messages with field-level details; reduces code from 22 lines to 16 lines while improving clarity; matches project&#39;s validation patterns</p></li>
+
+        <li><strong>modernize · medium impact</strong>
+          <p>Replace custom ID generation with Node.js crypto.randomUUID() for cryptographically secure, collision-resistant IDs. The current implementation using Date.now() and Math.random() is not cryptographically secure and has potential collision issues.</p>
+          <pre><code>function generateId(): string {
+  return `user_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+}
+→
+import { randomUUID } from &#39;node:crypto&#39;;
+
+function generateId(): string {
+  return `user_${randomUUID()}`;
+}</code></pre>
+          <p>Cryptographically secure random generation; RFC 4122 compliant UUIDs with near-zero collision probability; simpler implementation with standard library; no time-based component that could leak information; better suited for distributed systems</p></li>
+
+        <li><strong>simplify · low impact</strong>
+          <p>Simplify HTML entity encoding by using a lookup map with reduce, making it more maintainable and easier to extend with additional entities.</p>
+          <pre><code>export function sanitizeInput(input: string): string {
+  return input
+    .replace(/&lt;/g, &#39;&amp;lt;&#39;)
+    .replace(/&gt;/g, &#39;&amp;gt;&#39;)
+    .replace(/&quot;/g, &#39;&amp;quot;&#39;)
+    .replace(/&#39;/g, &#39;&amp;#039;&#39;);
+}
+→
+const HTML_ENTITIES: Record&lt;string, string&gt; = {
+  &#39;&lt;&#39;: &#39;&amp;lt;&#39;,
+  &#39;&gt;&#39;: &#39;&amp;gt;&#39;,
+  &#39;&quot;&#39;: &#39;&amp;quot;&#39;,
+  &quot;&#39;&quot;: &#39;&amp;#039;&#39;
+} as const;
+
+export function sanitizeInput(input: string): string {
+  return input.replace(/[&lt;&gt;&quot;&#39;]/g, char =&gt; HTML_ENTITIES[char] || char);
+}</code></pre>
+          <p>Single regex pass instead of four separate replace operations; easier to add or modify entity mappings; more efficient with only one iteration through the string; clear separation of data (entities map) from logic</p></li>
+
+        <li><strong>extract-function · low impact</strong>
+          <p>Extract SQL query construction into a separate function for better testability and reusability. This separates the query definition from execution logic.</p>
+          <pre><code>async function saveUser(user: User): Promise&lt;void&gt; {
+  const query = &#39;INSERT INTO users (id, email, name, created_at) VALUES ($1, $2, $3, $4)&#39;;
+  const params = [user.id, user.email, user.name, user.createdAt];
+  // await db.query(query, params);
+}
+→
+interface QueryParams {
+  query: string;
+  params: unknown[];
+}
+
+function buildInsertUserQuery(user: User): QueryParams {
+  return {
+    query: &#39;INSERT INTO users (id, email, name, created_at) VALUES ($1, $2, $3, $4)&#39;,
+    params: [user.id, user.email, user.name, user.createdAt]
+  };
+}
+
+async function saveUser(user: User): Promise&lt;void&gt; {
+  const { query, params } = buildInsertUserQuery(user);
+  // await db.query(query, params);
+}</code></pre>
+          <p>Query construction becomes independently testable; easier to reuse query building logic; clear separation between query definition and execution; type-safe query parameters with QueryParams interface</p></li>
+
+        <li><strong>rename · low impact</strong>
+          <p>Consider renaming &#39;User&#39; to &#39;UserEntity&#39; or &#39;UserRecord&#39; to better indicate this is a database entity and avoid confusion with authentication/session user concepts.</p>
+          <pre><code>export interface User {
+  id: string;
+  email: string;
+  name: string;
+  createdAt: Date;
+}
+→
+export interface UserEntity {
+  id: string;
+  email: string;
+  name: string;
+  createdAt: Date;
+}
+
+export async function createUser(input: CreateUserInput): Promise&lt;UserEntity&gt; {
+  // ...
+}</code></pre>
+          <p>Clearer semantic meaning as a database entity; avoids confusion with other user-related types (auth users, user sessions); follows common naming conventions for data models; makes the fixture&#39;s purpose as a data structure more explicit</p></li>
+
+        <li><strong>pattern-improvement · medium impact</strong>
+          <p>Define CreateUserInput as a Zod schema and derive the TypeScript type from it. This ensures single source of truth for both validation and typing, following the project&#39;s pattern.</p>
+          <pre><code>export interface CreateUserInput {
+  email: string;
+  name: string;
+}
+→
+import { z } from &#39;zod&#39;;
+
+export const CreateUserInputSchema = z.object({
+  email: z.string().email(),
+  name: z.string().min(1)
+});
+
+export type CreateUserInput = z.infer&lt;typeof CreateUserInputSchema&gt;;</code></pre>
+          <p>Single source of truth for validation and types; follows project conventions; runtime and compile-time validation from same definition; easier to extend with additional validation rules; type automatically updates when schema changes</p></li>
+      </ul></section>
+
+  <footer>
+    Generated at 2026-11-03T05:23:52.739Z • Duration: 261155ms
+  </footer>
+</body>
+</html>
